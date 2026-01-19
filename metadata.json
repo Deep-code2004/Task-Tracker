@@ -1,0 +1,7 @@
+{
+  "name": "SmartTask AI Tracker",
+  "description": "A high-performance task management application featuring Redux state management, Radix UI components, and Gemini AI-powered task optimization and suggestions.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
