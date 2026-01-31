@@ -2,13 +2,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from './store/store';
-import { fetchTasksPaginated, setPage } from './store/tasksSlice';
+import { fetchTasksPaginated, setPage, updateTaskPriority } from './store/tasksSlice';
 import TaskCard from './components/TaskCard';
 import TaskForm from './components/TaskForm';
 import Pagination from './components/Pagination';
 import { Plus, Sparkles, LayoutGrid, ListTodo, CheckSquare, BrainCircuit, RefreshCw } from 'lucide-react';
-import { geminiService } from './services/geminiService';
 import * as Tabs from '@radix-ui/react-tabs';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 
 const App: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -27,9 +27,26 @@ const App: React.FC = () => {
 
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
 
+    const { draggableId, destination } = result;
+    const newPriority = destination.droppableId as 'High' | 'Medium' | 'Low';
+
+    dispatch(updateTaskPriority({ id: draggableId, priority: newPriority }));
+  };
+
+  // Group tasks by priority for drag and drop
+  const tasksByPriority = useMemo(() => {
+    return {
+      High: items.filter(task => task.priority === 'High'),
+      Medium: items.filter(task => task.priority === 'Medium'),
+      Low: items.filter(task => task.priority === 'Low')
+    };
+  }, [items]);
 
   return (
+    <DragDropContext onDragEnd={handleDragEnd}>
     <div className="min-h-screen max-w-5xl mx-auto px-4 py-8 md:py-12">
       {/* Header Section */}
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
@@ -89,19 +106,50 @@ const App: React.FC = () => {
               <p className="text-slate-500 mt-1">Get started by creating your first task above.</p>
             </div>
           ) : (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {paginatedTasks.map((task) => (
-                  <TaskCard key={task.id} task={task} />
-                ))}
-              </div>
-              <Pagination 
-                currentPage={currentPage} 
-                totalPages={totalPages} 
-                onPageChange={(p) => dispatch(setPage(p))} 
-                isLoading={loading}
-              />
-            </>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {(['High', 'Medium', 'Low'] as const).map((priority) => (
+                <Droppable key={priority} droppableId={priority}>
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className={`bg-slate-50 rounded-xl p-4 min-h-[400px] border-2 border-dashed transition-colors ${
+                        snapshot.isDraggingOver ? 'border-blue-400 bg-blue-50' : 'border-slate-200'
+                      }`}
+                    >
+                      <h3 className={`font-semibold text-lg mb-4 flex items-center gap-2 ${
+                        priority === 'High' ? 'text-red-600' :
+                        priority === 'Medium' ? 'text-amber-600' : 'text-emerald-600'
+                      }`}>
+                        {priority} Priority
+                        <span className="text-sm font-normal text-slate-500">
+                          ({tasksByPriority[priority].length})
+                        </span>
+                      </h3>
+                      <div className="space-y-3">
+                        {tasksByPriority[priority].map((task, index) => (
+                          <Draggable draggableId={task.id} index={index}>
+                            {(provided, snapshot) => (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                className={`transition-transform ${
+                                  snapshot.isDragging ? 'rotate-3 shadow-lg' : ''
+                                }`}
+                              >
+                                <TaskCard task={task} />
+                              </div>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </div>
+                    </div>
+                  )}
+                </Droppable>
+              ))}
+            </div>
           )}
         </Tabs.Content>
 
@@ -124,6 +172,7 @@ const App: React.FC = () => {
         </p>
       </footer>
     </div>
+    </DragDropContext>
   );
 };
 

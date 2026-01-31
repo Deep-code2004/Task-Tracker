@@ -3,12 +3,58 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { Task, TasksState, PaginatedResponse } from '../types';
 
 const initialState: TasksState = {
-  items: [],
+  items: [
+    {
+      id: '1',
+      title: 'Complete project documentation',
+      description: 'Write comprehensive documentation for the new feature',
+      priority: 'High',
+      status: 'Todo',
+      dueDate: '2026-01-25',
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: '2',
+      title: 'Review code changes',
+      description: 'Review the pull request for the authentication module',
+      priority: 'Medium',
+      status: 'In Progress',
+      dueDate: '2026-01-22',
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: '3',
+      title: 'Update dependencies',
+      description: 'Update all outdated npm packages to latest versions',
+      priority: 'Low',
+      status: 'Todo',
+      dueDate: '2026-01-30',
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: '4',
+      title: 'Fix bug in user interface',
+      description: 'The modal dialog is not closing properly on mobile devices',
+      priority: 'High',
+      status: 'Todo',
+      dueDate: '2026-01-23',
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: '5',
+      title: 'Set up CI/CD pipeline',
+      description: 'Configure automated testing and deployment pipeline',
+      priority: 'Medium',
+      status: 'Completed',
+      dueDate: '2026-01-20',
+      createdAt: new Date().toISOString(),
+    },
+  ],
   loading: false,
   error: null,
   currentPage: 1,
   itemsPerPage: 5,
-  totalItems: 0,
+  totalItems: 5,
   aiAnalyzing: false,
 };
 
@@ -42,8 +88,12 @@ const tasksSlice = createSlice({
       state.totalItems += 1;
     },
     updateTaskStatus: (state, action: PayloadAction<{ id: string; status: Task['status'] }>) => {
-      const task = state.items.find(t => t.id === action.id);
+      const task = state.items.find(t => t.id === action.payload.id);
       if (task) task.status = action.payload.status;
+    },
+    updateTaskPriority: (state, action: PayloadAction<{ id: string; priority: Task['priority'] }>) => {
+      const task = state.items.find(t => t.id === action.payload.id);
+      if (task) task.priority = action.payload.priority;
     },
     deleteTask: (state, action: PayloadAction<string>) => {
       state.items = state.items.filter(t => t.id !== action.payload);
@@ -73,5 +123,5 @@ const tasksSlice = createSlice({
   },
 });
 
-export const { addTask, updateTaskStatus, deleteTask, setPage, setAiAnalyzing } = tasksSlice.actions;
+export const { addTask, updateTaskStatus, updateTaskPriority, deleteTask, setPage, setAiAnalyzing } = tasksSlice.actions;
 export default tasksSlice.reducer;
